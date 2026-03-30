@@ -2,34 +2,27 @@
 set -e
 
 DOMAIN="maheshbhau.xyz"
-EMAIL="mahesh@maheshbhau.xyz"   # <-- apna email yahan likho SSL alerts ke liye
+EMAIL="mahesh@maheshbhau.xyz"   # <-- apna email yahan likho
 
 echo "🚀 BolDost Deploy Starting..."
 
-# ─── 1. Docker & Docker Compose Install (agar nahi hai) ───────────────────────
+# ─── 1. Docker Install (agar nahi hai) ────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
   echo "📦 Docker install ho raha hai..."
-  sudo apt-get update -y
-  sudo apt-get install -y ca-certificates curl gnupg
-  sudo install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
-    https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-    sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-  sudo apt-get update -y
-  sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  sudo yum update -y
+  sudo yum install -y docker
+  sudo systemctl start docker
+  sudo systemctl enable docker
   sudo usermod -aG docker $USER
   echo "✅ Docker installed"
 fi
 
-if ! command -v docker compose &>/dev/null; then
-  sudo apt-get install -y docker-compose-plugin
-fi
+# Docker permission fix - sudo se chalao agar group nahi laga
+DOCKER="sudo docker"
 
 # ─── 2. .env file check ───────────────────────────────────────────────────────
 if [ ! -f ".env" ]; then
-  echo "❌ .env file nahi mili! Pehle .env file upload karo:"
-  echo "   scp -i key.pem .env ubuntu@EC2_IP:~/boldost/"
+  echo "❌ .env file nahi mili!"
   exit 1
 fi
 
@@ -37,7 +30,7 @@ set -a; source .env; set +a
 
 # ─── 3. App Build ─────────────────────────────────────────────────────────────
 echo "🔨 App build ho raha hai..."
-docker build \
+$DOCKER build \
   --build-arg GEMINI_API_KEY="$GEMINI_API_KEY" \
   --build-arg OPENROUTER_API_KEY="$OPENROUTER_API_KEY" \
   --build-arg GROQ_API_KEY="$GROQ_API_KEY" \
@@ -52,41 +45,33 @@ docker build \
   -t boldost-app .
 echo "✅ Build complete"
 
-# ─── 4. SSL Certificate (Let's Encrypt) ──────────────────────────────────────
+# ─── 4. Certbot folders - permission fix ──────────────────────────────────────
+sudo rm -rf ./certbot
 mkdir -p ./certbot/conf ./certbot/www
+sudo chown -R $USER:$USER ./certbot
 
+# ─── 5. SSL Certificate ───────────────────────────────────────────────────────
 if [ ! -f "./certbot/conf/live/$DOMAIN/fullchain.pem" ]; then
   echo "🔐 SSL certificate le raha hai..."
 
-  # Pehle sirf HTTP pe start karo (certbot challenge ke liye)
-  # Temporary nginx config - sirf port 80
-  cat > /tmp/nginx-temp.conf << 'EOF'
-server {
-    listen 80;
-    server_name _;
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-    location / {
-        return 200 'OK';
-        add_header Content-Type text/plain;
-    }
-}
-EOF
+  # Pehle koi container band karo
+  $DOCKER stop boldost boldost-temp 2>/dev/null || true
+  $DOCKER rm boldost boldost-temp 2>/dev/null || true
 
-  docker stop boldost 2>/dev/null || true
-  docker rm boldost 2>/dev/null || true
-
-  docker run -d --name boldost-temp \
+  # Port 80 pe simple nginx chalao certbot challenge ke liye
+  $DOCKER run -d --name boldost-temp \
     -p 80:80 \
     -v $(pwd)/certbot/www:/var/www/certbot \
-    -v /tmp/nginx-temp.conf:/etc/nginx/conf.d/default.conf \
-    nginx:alpine
+    nginx:alpine \
+    sh -c 'echo "server { listen 80; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 200 OK; } }" > /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"'
 
   sleep 3
 
-  # Certbot se SSL lo
-  docker run --rm \
+  echo "🌐 Port 80 check kar raha hai..."
+  curl -s http://localhost/.well-known/acme-challenge/test || echo "(normal hai agar 404 aaya)"
+
+  # Certbot SSL lo
+  $DOCKER run --rm \
     -v $(pwd)/certbot/conf:/etc/letsencrypt \
     -v $(pwd)/certbot/www:/var/www/certbot \
     certbot/certbot certonly \
@@ -98,38 +83,42 @@ EOF
     -d "$DOMAIN" \
     -d "www.$DOMAIN"
 
-  docker stop boldost-temp && docker rm boldost-temp
+  $DOCKER stop boldost-temp && $DOCKER rm boldost-temp
   echo "✅ SSL certificate mila!"
+
 else
-  echo "✅ SSL certificate already hai, renew check karta hai..."
-  docker run --rm \
+  echo "🔄 SSL already hai, renew check..."
+  $DOCKER run --rm \
     -v $(pwd)/certbot/conf:/etc/letsencrypt \
     -v $(pwd)/certbot/www:/var/www/certbot \
     certbot/certbot renew --quiet
 fi
 
-# ─── 5. App Start with HTTPS ──────────────────────────────────────────────────
-echo "🌐 App start ho raha hai HTTPS ke saath..."
+# ─── 6. App Start with HTTPS ──────────────────────────────────────────────────
+echo "🌐 HTTPS pe app start ho raha hai..."
 
-docker stop boldost 2>/dev/null || true
-docker rm boldost 2>/dev/null || true
+$DOCKER stop boldost 2>/dev/null || true
+$DOCKER rm boldost 2>/dev/null || true
 
-docker run -d \
+$DOCKER run -d \
   --name boldost \
   --restart unless-stopped \
   -p 80:80 \
   -p 443:443 \
-  -v $(pwd)/certbot/conf:/etc/letsencrypt \
+  -v $(pwd)/certbot/conf:/etc/letsencrypt:ro \
   -v $(pwd)/certbot/www:/var/www/certbot \
-  -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
+  -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf:ro \
   boldost-app
 
-# ─── 6. Auto SSL Renew (cron) ─────────────────────────────────────────────────
-CRON_JOB="0 3 * * * cd $(pwd) && docker run --rm -v $(pwd)/certbot/conf:/etc/letsencrypt -v $(pwd)/certbot/www:/var/www/certbot certbot/certbot renew --quiet && docker exec boldost nginx -s reload"
+sleep 2
+$DOCKER ps | grep boldost
+
+# ─── 7. Auto SSL Renew cron ───────────────────────────────────────────────────
+CRON_JOB="0 3 1 * * cd $(pwd) && sudo docker run --rm -v $(pwd)/certbot/conf:/etc/letsencrypt -v $(pwd)/certbot/www:/var/www/certbot certbot/certbot renew --quiet && sudo docker exec boldost nginx -s reload"
 (crontab -l 2>/dev/null | grep -v "certbot renew"; echo "$CRON_JOB") | crontab -
 
 echo ""
 echo "✅ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🎉 BolDost is LIVE at: https://$DOMAIN"
-echo "🔒 HTTPS enabled with auto-renewal"
+echo "🎉 BolDost LIVE at: https://$DOMAIN"
+echo "🔒 HTTPS with auto-renewal every month"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
