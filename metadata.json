@@ -1,0 +1,5 @@
+{
+  "name": "BolDost - AI English Tutor",
+  "description": "A modern, minimal AI-powered English learning app for Indian users to improve spoken English in 5 minutes daily.",
+  "requestFramePermissions": ["microphone"]
+}

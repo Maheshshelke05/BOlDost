@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "displayName": { "type": "string", "description": "User's display name" },
+        "email": { "type": "string", "description": "User's email address" },
+        "photoURL": { "type": "string", "description": "User's profile picture URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the user account was created" },
+        "lastLogin": { "type": "string", "format": "date-time", "description": "When the user last logged in" },
+        "minutesPracticedToday": { "type": "number", "description": "Minutes of practice today" },
+        "xp": { "type": "number", "description": "Total experience points" }
+      },
+      "required": ["uid", "email"]
+    },
+    "LiveSessionTranscript": {
+      "title": "LiveSessionTranscript",
+      "description": "Transcript of a live AI tutor session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user" },
+        "timestamp": { "type": "number", "description": "When the session ended" },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["user", "model"] },
+              "text": { "type": "string" },
+              "timestamp": { "type": "number" }
+            }
+          }
+        }
+      },
+      "required": ["userId", "timestamp", "messages"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message in a chat conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "role", "content", "timestamp"]
+    },
+    "Presence": {
+      "title": "Presence",
+      "description": "User online status and availability",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "lastSeen": { "type": "number" },
+        "status": { "type": "string", "enum": ["online", "busy"] }
+      },
+      "required": ["uid", "lastSeen", "status"]
+    },
+    "Call": {
+      "title": "Call",
+      "description": "A peer-to-peer voice call session",
+      "type": "object",
+      "properties": {
+        "callerId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["ringing", "accepted", "rejected", "ended"] },
+        "offer": { "type": "object" },
+        "answer": { "type": "object" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["callerId", "receiverId", "status", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document"
+    },
+    "/users/{userId}/liveTranscripts/{transcriptId}": {
+      "schema": "LiveSessionTranscript",
+      "description": "Live session transcripts for a user"
+    },
+    "/users/{userId}/chatHistory/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Chat history for a user"
+    },
+    "/presence/{userId}": {
+      "schema": "Presence",
+      "description": "Global presence tracking"
+    },
+    "/calls/{callId}": {
+      "schema": "Call",
+      "description": "Active and past call sessions"
+    },
+    "/calls/{callId}/callerCandidates/{id}": {
+      "schema": "object",
+      "description": "ICE candidates from caller"
+    },
+    "/calls/{callId}/receiverCandidates/{id}": {
+      "schema": "object",
+      "description": "ICE candidates from receiver"
+    }
+  }
+}

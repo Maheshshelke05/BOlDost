@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId} (Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (optional)
+    //   - email: string (required)
+    //   - photoURL: string (optional)
+    //   - createdAt: timestamp (optional)
+    //   - lastLogin: timestamp (optional)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string &&
+             (!('displayName' in data) || data.displayName is string) &&
+             (!('photoURL' in data) || data.photoURL is string) &&
+             (!('minutesPracticedToday' in data) || data.minutesPracticedToday is number) &&
+             (!('xp' in data) || data.xp is number);
+    }
+
+    function isValidLiveTranscript(data) {
+      return data.keys().hasAll(['userId', 'timestamp', 'messages']) &&
+             data.userId is string &&
+             data.timestamp is number &&
+             data.messages is list;
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll(['id', 'role', 'content', 'timestamp']) &&
+             data.id is string &&
+             data.role in ['user', 'assistant'] &&
+             data.content is string &&
+             data.timestamp is number;
+    }
+
+    function isValidPresence(data) {
+      return data.keys().hasAll(['uid', 'lastSeen', 'status']) &&
+             data.uid is string &&
+             data.lastSeen is number &&
+             data.status in ['online', 'busy'] &&
+             (!('displayName' in data) || data.displayName is string) &&
+             (!('photoURL' in data) || data.photoURL is string);
+    }
+
+    function isCallParticipant(callId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/calls/$(callId)).data.callerId == request.auth.uid || 
+        get(/databases/$(database)/documents/calls/$(callId)).data.receiverId == request.auth.uid
+      );
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if false;
+
+      match /liveTranscripts/{transcriptId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidLiveTranscript(request.resource.data);
+        allow update, delete: if false;
+      }
+
+      match /chatHistory/{messageId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidChatMessage(request.resource.data);
+        allow update, delete: if false;
+      }
+    }
+
+    match /presence/{userId} {
+      // Anyone authenticated can see who is online
+      allow read: if isAuthenticated();
+      // Only the user can manage their own presence
+      allow write: if isOwner(userId);
+    }
+
+    match /calls/{callId} {
+      // Allow read if user is a participant
+      allow read: if isAuthenticated() && (
+        resource.data.callerId == request.auth.uid || 
+        resource.data.receiverId == request.auth.uid
+      );
+      
+      // Allow listing calls where user is a participant (for incoming call listener)
+      allow list: if isAuthenticated() && (
+        resource.data.receiverId == request.auth.uid || 
+        resource.data.callerId == request.auth.uid
+      );
+
+      allow create: if isAuthenticated() && 
+        request.resource.data.callerId == request.auth.uid;
+      
+      // Allow update if user is a participant
+      allow update: if isAuthenticated() && (
+        resource.data.callerId == request.auth.uid || 
+        resource.data.receiverId == request.auth.uid
+      );
+      
+      allow delete: if false;
+      
+      match /callerCandidates/{id} {
+        allow read, write: if isCallParticipant(callId);
+      }
+      match /receiverCandidates/{id} {
+        allow read, write: if isCallParticipant(callId);
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Sora:wght@100..800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-primary: #135d66;
+  --color-brand-secondary: #f4b860;
+  --color-brand-accent: #68b984;
+  --color-brand-bg: #f6efe6;
+  --color-brand-surface: #fffaf4;
+  --color-brand-dark: #12343b;
+}
+
+@layer base {
+  html {
+    background:
+      radial-gradient(circle at top left, rgba(244, 184, 96, 0.18), transparent 30%),
+      radial-gradient(circle at top right, rgba(104, 185, 132, 0.18), transparent 28%),
+      linear-gradient(180deg, #fffaf4 0%, #f7f0e7 48%, #f1e7dc 100%);
+  }
+  body {
+    @apply bg-transparent text-slate-900 font-sans antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #root {
+    min-height: 100vh;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 3px solid rgba(19, 93, 102, 0.28);
+    outline-offset: 3px;
+  }
+  * { scroll-behavior: smooth; }
+  ::selection {
+    background: rgba(19, 93, 102, 0.18);
+    color: #12343b;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: rgba(18, 52, 59, 0.06); }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(19, 93, 102, 0.34);
+    border-radius: 9999px;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 250, 244, 0.72);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: 0 24px 60px rgba(18, 52, 59, 0.08);
+    @apply rounded-[28px];
+  }
+  .card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 250, 244, 0.95));
+    border: 1px solid rgba(19, 93, 102, 0.08);
+    box-shadow: 0 18px 46px rgba(18, 52, 59, 0.08);
+    @apply rounded-[28px];
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #135d66 0%, #1f7a75 100%);
+    box-shadow: 0 18px 40px rgba(19, 93, 102, 0.22);
+    @apply text-white px-6 py-3 rounded-2xl font-semibold transition-all active:scale-95 disabled:opacity-50;
+  }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(19, 93, 102, 0.12);
+    @apply text-slate-700 px-6 py-3 rounded-2xl font-semibold transition-all active:scale-95 shadow-sm;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .section-label {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(19, 93, 102, 0.1);
+    @apply inline-flex items-center gap-2 text-brand-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-[0.24em];
+  }
+  .gradient-text {
+    @apply text-transparent bg-clip-text bg-gradient-to-r from-brand-primary via-brand-accent to-brand-secondary;
+  }
+  .app-shell {
+    background:
+      radial-gradient(circle at top left, rgba(244, 184, 96, 0.15), transparent 24%),
+      radial-gradient(circle at bottom right, rgba(104, 185, 132, 0.16), transparent 22%),
+      linear-gradient(180deg, rgba(255, 250, 244, 0.9), rgba(247, 240, 231, 0.88));
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 32px 90px rgba(18, 52, 59, 0.12);
+    @apply rounded-[32px] backdrop-blur-xl;
+  }
+  .soft-panel {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(19, 93, 102, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    @apply rounded-[28px];
+  }
+  .dashboard-canvas {
+    background:
+      radial-gradient(circle at 12% 14%, rgba(244, 184, 96, 0.2), transparent 18%),
+      radial-gradient(circle at 88% 12%, rgba(104, 185, 132, 0.18), transparent 20%),
+      radial-gradient(circle at 50% 100%, rgba(19, 93, 102, 0.08), transparent 28%),
+      linear-gradient(180deg, rgba(255, 252, 247, 0.94), rgba(242, 234, 224, 0.92));
+  }
+  .editorial-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 248, 240, 0.88));
+    border: 1px solid rgba(19, 93, 102, 0.1);
+    box-shadow: 0 24px 70px rgba(18, 52, 59, 0.08);
+    @apply rounded-[30px];
+  }
+  .floating-dock {
+    background: rgba(255, 250, 244, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    box-shadow: 0 18px 50px rgba(18, 52, 59, 0.12);
+    @apply backdrop-blur-2xl rounded-[28px];
+  }
+
+  .dashboard-theme {
+    background:
+      radial-gradient(circle at top left, rgba(244, 184, 96, 0.08), transparent 22%),
+      linear-gradient(180deg, #fcf8f2 0%, #f7f2ea 55%, #f3ede5 100%);
+  }
+
+  .dashboard-theme .app-shell {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(251, 247, 241, 0.92));
+    border: 1px solid rgba(19, 93, 102, 0.08);
+    box-shadow: 0 20px 60px rgba(18, 52, 59, 0.08);
+    backdrop-filter: blur(18px);
+  }
+
+  .dashboard-theme .card,
+  .dashboard-theme .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+    backdrop-filter: blur(14px);
+  }
+
+  .dashboard-theme .soft-panel {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 244, 238, 0.95));
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .dashboard-theme .dashboard-canvas {
+    background:
+      radial-gradient(circle at 10% 12%, rgba(244, 184, 96, 0.12), transparent 16%),
+      radial-gradient(circle at 88% 10%, rgba(104, 185, 132, 0.1), transparent 16%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(246, 240, 233, 0.94));
+  }
+
+  .dashboard-theme .editorial-panel,
+  .dashboard-theme .floating-dock {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  }
+
+  .dashboard-theme .btn-primary {
+    box-shadow: 0 14px 28px rgba(19, 93, 102, 0.16);
+  }
+
+  .dashboard-theme .btn-secondary {
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+.animate-float { animation: float 3s ease-in-out infinite; }
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease infinite;
+}
+
+@keyframes blob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+}
+.animate-blob { animation: blob 7s ease-in-out infinite; }
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+.animate-pulse-ring { animation: pulse-ring 1.5s ease-out infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes rise-fade {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-theme .animate-rise-fade {
+  animation: rise-fade 0.45s ease both;
+}
