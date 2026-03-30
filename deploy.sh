@@ -114,8 +114,16 @@ sleep 2
 $DOCKER ps | grep boldost
 
 # ─── 7. Auto SSL Renew cron ───────────────────────────────────────────────────
+# cronie install karo (Amazon Linux)
+if ! command -v crontab &>/dev/null; then
+  sudo yum install -y cronie
+  sudo systemctl start crond
+  sudo systemctl enable crond
+fi
+
 CRON_JOB="0 3 1 * * cd $(pwd) && sudo docker run --rm -v $(pwd)/certbot/conf:/etc/letsencrypt -v $(pwd)/certbot/www:/var/www/certbot certbot/certbot renew --quiet && sudo docker exec boldost nginx -s reload"
 (crontab -l 2>/dev/null | grep -v "certbot renew"; echo "$CRON_JOB") | crontab -
+echo "✅ Auto-renew cron set"
 
 echo ""
 echo "✅ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
