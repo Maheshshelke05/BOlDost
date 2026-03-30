@@ -119,10 +119,28 @@ export function useLiveSession() {
     setConversation([]);
     
     try {
-      const keyRes = await fetch('/api/ai/key');
-      const { key } = await keyRes.json();
-      if (!key) throw new Error('Gemini API key not available');
-      const ai = new GoogleGenAI({ apiKey: key });
+      // Get API key from server proxy
+      let apiKey = '';
+      try {
+        const keyRes = await fetch('/api/ai/key');
+        if (keyRes.ok) {
+          const { key } = await keyRes.json();
+          apiKey = key;
+        }
+      } catch (e) {
+        console.warn('[BolDost] Proxy key fetch failed, using build-time key');
+      }
+
+      // Fallback to build-time injected key (production)
+      if (!apiKey) {
+        apiKey = import.meta.env.VITE_GEMINI_API_KEY_LIVE || '';
+      }
+
+      if (!apiKey) {
+        throw new Error('Gemini API key not available');
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       const ctx = new AudioContext({ sampleRate: 24000 });
       audioContextRef.current = ctx;
 

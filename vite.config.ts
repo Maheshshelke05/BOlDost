@@ -196,6 +196,7 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID': JSON.stringify(env.FIREBASE_FIRESTORE_DATABASE_ID),
       'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.FIREBASE_STORAGE_BUCKET),
       'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.FIREBASE_MESSAGING_SENDER_ID),
+      'import.meta.env.VITE_GEMINI_API_KEY_LIVE': JSON.stringify(env.GEMINI_API_KEY),
     },
     resolve: {
       alias: {
